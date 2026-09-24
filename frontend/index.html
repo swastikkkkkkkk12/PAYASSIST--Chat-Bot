@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#f6f7fb"
+    >
+
+    <title>PayAssist AI</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- Top Navigation -->
+        <header class="topbar">
+
+            <a
+                class="brand"
+                href="#"
+                aria-label="PayAssist home"
+            >
+                <span
+                    class="brand-mark"
+                    aria-hidden="true"
+                >
+                    P
+                </span>
+
+                <span>
+                    PayAssist
+                </span>
+            </a>
+
+            <div class="service-status">
+                <span aria-hidden="true"></span>
+                Online
+            </div>
+
+        </header>
+
+
+        <!-- Chat Card -->
+        <main class="chat-card">
+
+            <!-- Chat Header -->
+            <section class="chat-heading">
+
+                <div
+                    class="assistant-avatar"
+                    aria-hidden="true"
+                >
+                    P
+                </div>
+
+                <div>
+                    <h1>PayAssist AI</h1>
+
+                    <p>
+                        AI-powered customer support assistant
+                    </p>
+                </div>
+
+            </section>
+
+
+            <!-- Messages -->
+            <section
+                id="messages"
+                class="messages"
+                aria-live="polite"
+                aria-label="Chat messages"
+            >
+
+                <article class="message assistant-message">
+
+                    <div
+                        class="message-avatar"
+                        aria-hidden="true"
+                    >
+                        P
+                    </div>
+
+                    <div class="bubble">
+                        Hello! I'm PayAssist. How can I help you today?
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- Message Composer -->
+            <form
+                id="chat-form"
+                class="composer"
+            >
+
+                <label
+                    for="question"
+                    class="sr-only"
+                >
+                    Enter your question
+                </label>
+
+                <textarea
+                    id="question"
+                    name="question"
+                    rows="1"
+                    placeholder="Type your question..."
+                    maxlength="1000"
+                    autocomplete="off"
+                    required
+                ></textarea>
+
+                <button
+                    id="send-button"
+                    type="submit"
+                    aria-label="Send message"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path d="M22 2 11 13"></path>
+                        <path d="m22 2-7 20-4-9-9-4Z"></path>
+                    </svg>
+                </button>
+
+            </form>
+
+
+            <p class="privacy-note">
+                PayAssist uses its knowledge base to provide support.
+            </p>
+
+        </main>
+
+
+        <!-- Footer -->
+        <footer>
+            PayAssist AI Customer Support
+        </footer>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -60,7 +60,9 @@ INTENT_KEYWORDS = {
 
     "PAYMENT_REVERSED": [
         "payment reversed",
+        "payment was reversed",
         "transaction reversed",
+        "transaction was reversed",
         "reversed payment",
     ],
 
@@ -86,15 +88,19 @@ INTENT_KEYWORDS = {
     ],
 
     "REFUND_NOT_RECEIVED": [
-        "refund not received",
-        "refund not received yet",
-        "have not received my refund",
-        "haven't received my refund",
-        "did not receive my refund",
-        "didn't receive my refund",
-        "refund has not arrived",
-        "refund hasn't arrived",
-        "refund not arrived",
+    "refund not received",
+    "refund not received yet",
+    "have not received my refund",
+    "haven't received my refund",
+    "did not receive my refund",
+    "didn't receive my refund",
+    "refund has not been received",
+    "refund was not received",
+    "refund is not received",
+    "refund was not received yet",
+    "refund has not arrived",
+    "refund hasn't arrived",
+    "refund not arrived",
     ],
 
     "REFUND_FAILED": [
@@ -120,6 +126,8 @@ INTENT_KEYWORDS = {
     "KYC_STATUS": [
         "kyc pending",
         "kyc status",
+        "status of my kyc",
+        "status of kyc",
         "kyc verification",
         "kyc is pending",
     ],
@@ -137,11 +145,18 @@ INTENT_KEYWORDS = {
     "UNAUTHORIZED_TRANSACTION": [
         "don't recognize this payment",
         "do not recognize this payment",
+        "don't recognize this transaction",
+        "do not recognize this transaction",
+        "don't recognize a transaction",
+        "do not recognize a transaction",
+        "transaction on my account",
         "unauthorized transaction",
         "unauthorised transaction",
         "unknown transaction",
-        "unrecognized transaction",
-        "unrecognised transaction",
+        "don't recognize a transaction on my account",
+        "do not recognize a transaction on my account",
+        "i don't recognize a transaction on my account",
+        "i do not recognize a transaction on my account",
     ],
 
     "SUSPICIOUS_ACTIVITY": [

@@ -1,34 +1,48 @@
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
 from intent_classifier import classify_intent
 from retriever import search, warm_up
 from generator import generate_answer
 
+
 TOP_K = 3
 CACHE_SIZE = 256
+
 EXIT_COMMANDS = {"exit", "quit"}
-ERROR_MESSAGE = "Sorry, something went wrong while answering. Please try again."
+
+ERROR_MESSAGE = (
+    "Sorry, something went wrong while answering. Please try again."
+)
+
+NO_KNOWLEDGE_MESSAGE = (
+    "I don't have enough information in my knowledge base "
+    "to answer that accurately."
+)
 
 logger = logging.getLogger("payassist")
 
-
-_executor = ThreadPoolExecutor(max_workers=2)
-
-
 @lru_cache(maxsize=CACHE_SIZE)
 def answer_question(question: str) -> str:
-    """Run the full pipeline. Identical repeat questions are served from cache."""
+    """Run the complete PayAssist pipeline."""
+
     start = time.perf_counter()
 
-    intent_future = _executor.submit(classify_intent, question)
-    chunks_future = _executor.submit(search, question, TOP_K)
+    intent = classify_intent(question)["intent"]
+    if intent == "UNKNOWN":
+        return "I couldn't identify your request. Please rephrase it or ask about payments, UPI, refunds, KYC, account access, security, or complaints."
 
-    intent = intent_future.result()["intent"]
-    retrieved_chunks = chunks_future.result()
+    retrieved_chunks = search(question, TOP_K, intent=intent)
+
     retrieval_done = time.perf_counter()
+
+    if not retrieved_chunks:
+        logger.info(
+            "No relevant knowledge found for question: %r",
+            question,
+        )
+        return NO_KNOWLEDGE_MESSAGE
 
     answer = generate_answer(
         question=question,
@@ -41,14 +55,17 @@ def answer_question(question: str) -> str:
         retrieval_done - start,
         time.perf_counter() - retrieval_done,
     )
+
     return answer
 
 
 def read_question() -> str | None:
     """Return the next question, or None if the user wants to quit."""
+
     while True:
         try:
             question = input("\nCustomer question: ").strip()
+
         except (EOFError, KeyboardInterrupt):
             return None
 
@@ -63,7 +80,7 @@ def read_question() -> str | None:
 
 
 def main():
-    logging.basicConfig(level=logging.WARNING)  
+    logging.basicConfig(level=logging.WARNING)
 
     print("===================================")
     print("       PayAssist AI Assistant")
@@ -75,16 +92,21 @@ def main():
 
     try:
         while (question := read_question()) is not None:
+
             try:
                 answer = answer_question(question)
+
             except Exception:
-                logger.exception("Failed to answer question: %r", question)
+                logger.exception(
+                    "Failed to answer question: %r",
+                    question,
+                )
                 answer = ERROR_MESSAGE
 
             print("\nPayAssist:")
             print(answer)
+
     finally:
-        _executor.shutdown(wait=False)
         print("\nPayAssist stopped.")
 
 
