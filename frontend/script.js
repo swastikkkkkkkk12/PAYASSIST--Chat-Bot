@@ -77,7 +77,7 @@ form.addEventListener("submit", async (event) => {
       },
       body: JSON.stringify({
         question,
-        history: conversationHistory.slice(-10),
+        history: conversationHistory.slice(-11,-1),
         }),
     });
 

@@ -1,20 +1,14 @@
-import os
-from openai import OpenAI
 from ollama import chat
+
 
 # ---------------------------------------------------------
 # CONFIGURATION
 # ---------------------------------------------------------
 
-MODEL = "gpt-5-mini"
+MODEL = "llama3.2:3b"
 
-api_key = os.getenv("OPENAI_API_KEY")
-
-if not api_key:
-    raise RuntimeError("OPENAI_API_KEY environment variable is not set.")
-
-client = OpenAI(api_key=api_key)
-
+MAX_CONTEXT_CHUNKS = 3
+MAX_HISTORY_MESSAGES = 10 
 
 # ---------------------------------------------------------
 # SYSTEM PROMPT
@@ -271,7 +265,7 @@ IMPORTANT:
 Return ONLY the final customer-facing answer.
 """
     response = chat(
-        model="llama3.2:3b",
+        model=MODEL,
         messages=[
             {
                 "role": "system",

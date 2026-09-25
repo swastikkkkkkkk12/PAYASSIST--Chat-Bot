@@ -145,6 +145,7 @@ def health_check():
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
+
     start_time = time.perf_counter()
 
     question = request.question.strip()
@@ -174,6 +175,33 @@ def chat(request: ChatRequest):
         len(request.history),
     )
 
+    # --------------------------------------------------
+    # Resolve Context From Conversation History
+    # --------------------------------------------------
+
+    retrieval_question = question
+
+    if intent == "UNKNOWN" and request.history:
+
+        # Recover the most recent known intent.
+        for message in reversed(request.history):
+
+            message_intent = (
+                message.intent or ""
+            ).strip()
+
+            if (
+                message.role.strip().lower() == "assistant"
+                and message_intent
+                and message_intent != "UNKNOWN"
+            ):
+                intent = message_intent
+                break
+
+    # --------------------------------------------------
+    # Request Processing
+    # --------------------------------------------------
+
     status = "completed"
 
     try:
@@ -183,6 +211,7 @@ def chat(request: ChatRequest):
         # --------------------------------------------------
 
         if intent == "UNKNOWN":
+
             status = "unknown_intent"
 
             return {
@@ -191,18 +220,54 @@ def chat(request: ChatRequest):
                 "answer": (
                     "I'm sorry, but I couldn't identify your request. "
                     "Please rephrase your question or ask about payments, "
-                    "UPI, refunds, KYC, account access, security, or complaints."
+                    "UPI, refunds, KYC, account access, security, "
+                    "or complaints."
                 ),
             }
 
         # --------------------------------------------------
-        # Step 3: Retrieve Knowledge
+        # Step 3: Build Context-Aware Retrieval Query
+        # --------------------------------------------------
+
+        if request.history:
+
+            recent_messages = request.history[-4:]
+
+            context_parts = []
+
+            for message in recent_messages:
+
+                content = message.content.strip()
+
+                if content:
+                    context_parts.append(content)
+
+            if context_parts:
+
+                context_text = " ".join(context_parts)
+
+                retrieval_question = (
+                    f"{context_text} {question}"
+                )
+
+        logger.info(
+            "Retrieval question=%r",
+            retrieval_question,
+        )
+
+        # --------------------------------------------------
+        # Step 4: Retrieve Knowledge
         # --------------------------------------------------
 
         try:
-            retrieved_chunks = search(question)
+
+            retrieved_chunks = search(
+                retrieval_question,
+                intent=intent,
+            )
 
         except Exception:
+
             status = "retrieval_failed"
 
             logger.exception(
@@ -214,8 +279,8 @@ def chat(request: ChatRequest):
                 "question": question,
                 "intent": intent,
                 "answer": (
-                    "Something went wrong while looking that up. "
-                    "Please try again in a moment."
+                    "Something went wrong while looking "
+                    "that up. Please try again in a moment."
                 ),
             }
 
@@ -226,38 +291,42 @@ def chat(request: ChatRequest):
         )
 
         # --------------------------------------------------
-        # Step 4: Handle Missing Knowledge
+        # Step 5: Handle Missing Knowledge
         # --------------------------------------------------
 
         if not retrieved_chunks:
+
             status = "no_knowledge"
 
             return {
                 "question": question,
                 "intent": intent,
                 "answer": (
-                    "I don't have enough information in my knowledge base "
-                    "to answer that accurately."
+                    "I don't have enough information in my "
+                    "knowledge base to answer that accurately."
                 ),
             }
 
         # --------------------------------------------------
-        # Step 5: Build Conversation Context
+        # Step 6: Build Conversation Context
         # --------------------------------------------------
 
         history_lines = []
 
         for message in request.history:
+
             role = message.role.strip().lower()
 
             if role not in {"user", "assistant"}:
                 continue
 
             history_lines.append(
-                f"{role.upper()}: {message.content.strip()}"
+                f"{role.upper()}: "
+                f"{message.content.strip()}"
             )
 
         if history_lines:
+
             conversation_context = (
                 "Previous conversation:\n"
                 + "\n".join(history_lines)
@@ -265,14 +334,17 @@ def chat(request: ChatRequest):
                 "Current customer question:\n"
                 + question
             )
+
         else:
+
             conversation_context = question
 
         # --------------------------------------------------
-        # Step 6: Generate Answer
+        # Step 7: Generate Answer
         # --------------------------------------------------
 
         try:
+
             answer = generate_answer(
                 question=conversation_context,
                 intent=intent,
@@ -280,6 +352,7 @@ def chat(request: ChatRequest):
             )
 
         except Exception:
+
             status = "generation_failed"
 
             logger.exception(
@@ -291,13 +364,14 @@ def chat(request: ChatRequest):
                 "question": question,
                 "intent": intent,
                 "answer": (
-                    "I found relevant information but couldn't generate "
-                    "a response right now. Please try again shortly."
+                    "I found relevant information but "
+                    "couldn't generate a response right now. "
+                    "Please try again shortly."
                 ),
             }
 
         # --------------------------------------------------
-        # Step 7: Return Response
+        # Step 8: Return Response
         # --------------------------------------------------
 
         return {
@@ -312,7 +386,10 @@ def chat(request: ChatRequest):
         # Request Logging
         # --------------------------------------------------
 
-        elapsed = time.perf_counter() - start_time
+        elapsed = (
+            time.perf_counter()
+            - start_time
+        )
 
         log = (
             logger.warning
@@ -321,7 +398,8 @@ def chat(request: ChatRequest):
         )
 
         log(
-            "Request finished | intent=%s | status=%s | duration=%.3fs",
+            "Request finished | intent=%s | "
+            "status=%s | duration=%.3fs",
             intent,
             status,
             elapsed,
