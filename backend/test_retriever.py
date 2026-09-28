@@ -6,42 +6,40 @@ from retriever import search, warm_up
 TOP_K = 3
 
 
-class TestCase(NamedTuple):
+class Case(NamedTuple):
     question: str
     expected_source: str
 
 
 TEST_CASES = (
-    TestCase(
+    Case(
         "I want to know my UPI transaction limit",
         "upi_limits.md",
     ),
-    TestCase(
+    Case(
         "My refund has not been received",
         "refund_not_received.md",
     ),
-    TestCase(
+    Case(
         "My payment was reversed",
         "payment_reversed.md",
     ),
-    TestCase(
+    Case(
         "Someone made a transaction that I don't recognize",
         "unauthorized_transaction.md",
     ),
-    TestCase(
+    Case(
         "My payment is still pending",
         "payment_pending.md",
     ),
-    TestCase(
+    Case(
         "I forgot my UPI PIN",
         "upi_pin.md",
     ),
 )
 
 
-def run_test(test_case: TestCase) -> bool:
-    """Return True when the expected source is retrieved."""
-
+def run_test(test_case: Case) -> bool:
     results = search(test_case.question, top_k=TOP_K)
 
     actual_sources = [

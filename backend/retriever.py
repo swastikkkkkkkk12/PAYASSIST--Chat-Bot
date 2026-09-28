@@ -7,14 +7,8 @@ import numpy as np
 from embeddings import create_embeddings, get_model
 
 
-# Minimum semantic similarity required before a result is considered relevant.
 MIN_SCORE = 0.40
-
-# Additional score given when the knowledge-base filename directly matches
-# the classified intent.
 INTENT_BOOST = 0.15
-
-# Number of cached search combinations.
 SEARCH_CACHE_SIZE = 256
 
 
@@ -22,7 +16,11 @@ SEARCH_CACHE_SIZE = 256
 def _load_index():
     """Load knowledge-base chunks and their embedding vectors."""
     chunks, vectors = create_embeddings()
-    vectors = np.ascontiguousarray(vectors, dtype=np.float32)
+
+    vectors = np.ascontiguousarray(
+        vectors,
+        dtype=np.float32,
+    )
 
     return chunks, vectors
 
@@ -50,26 +48,31 @@ def _encode_query(query: str) -> np.ndarray:
     )
 
 
-def _top_k_indexes(scores: np.ndarray, k: int) -> np.ndarray:
+def _top_k_indexes(
+    scores: np.ndarray,
+    k: int,
+) -> np.ndarray:
     """Return indexes of the highest-scoring results, best first."""
     k = min(k, scores.shape[0])
 
     if k <= 0:
         return np.empty(0, dtype=np.intp)
 
-    best = np.argpartition(scores, -k)[-k:]
+    best = np.argpartition(
+        scores,
+        -k,
+    )[-k:]
 
-    return best[np.argsort(scores[best])[::-1]]
+    return best[
+        np.argsort(scores[best])[::-1]
+    ]
 
 
-def _source_matches_intent(source: str, intent: str) -> bool:
-    """
-    Check whether the knowledge-base filename directly matches the intent.
-
-    Example:
-        CREATE_COMPLAINT
-        create_complaint.md
-    """
+def _source_matches_intent(
+    source: str,
+    intent: str,
+) -> bool:
+    """Check whether the knowledge-base filename matches the classified intent."""
     if not intent:
         return False
 
@@ -91,38 +94,37 @@ def _cached_search(
 
     chunks, vectors = _load_index()
 
-    # Create query embedding.
     query_vector = _encode_query(query)
 
-    # Calculate cosine similarity because vectors are normalized.
     scores = vectors @ query_vector
 
-    # Only consider semantically relevant chunks.
-    candidates = np.nonzero(scores >= MIN_SCORE)[0]
+    ranking_scores = scores.copy()
+
+    for index, chunk in enumerate(chunks):
+        source = chunk["source"]
+
+        if _source_matches_intent(
+            source,
+            intent,
+        ):
+            ranking_scores[index] += INTENT_BOOST
+
+    candidates = np.nonzero(
+        ranking_scores >= MIN_SCORE
+    )[0]
 
     if candidates.size == 0:
         return ()
 
-    # Create ranking scores.
-    ranking_scores = scores[candidates].copy()
+    candidate_scores = ranking_scores[candidates]
 
-    # Give a small boost to the document whose filename matches
-    # the already-classified intent.
-    for position, index in enumerate(candidates):
-        source = chunks[index]["source"]
-
-        if _source_matches_intent(source, intent):
-            ranking_scores[position] += INTENT_BOOST
-
-    # Rank candidates using the boosted score.
     ranked_local = _top_k_indexes(
-        ranking_scores,
+        candidate_scores,
         candidates.size,
     )
 
     ranked = candidates[ranked_local]
 
-    # Keep only one result per source file.
     unique_results = []
     seen_sources = set()
 
@@ -162,7 +164,9 @@ def search(
     if not query:
         return []
 
-    # Return copies so callers cannot modify cached results.
+    if top_k <= 0:
+        return []
+
     return [
         dict(result)
         for result in _cached_search(
@@ -177,11 +181,17 @@ def main():
     """Run an interactive retrieval test."""
 
     print("Loading model and knowledge base...")
+
     warm_up()
+
+    print("Retriever is ready!")
 
     while True:
         try:
-            question = input("\nAsk PayAssist (blank to quit): ").strip()
+            question = input(
+                "\nAsk PayAssist (blank to quit): "
+            ).strip()
+
         except (EOFError, KeyboardInterrupt):
             break
 
@@ -196,12 +206,21 @@ def main():
             print("No relevant knowledge found.")
             continue
 
-        for i, result in enumerate(results, start=1):
+        for i, result in enumerate(
+            results,
+            start=1,
+        ):
             print("=" * 50)
             print(f"Result {i}")
-            print(f"Score: {result['score']:.4f}")
-            print(f"Source: {result['source']}")
-            print(f"Category: {result['category']}")
+            print(
+                f"Score: {result['score']:.4f}"
+            )
+            print(
+                f"Source: {result['source']}"
+            )
+            print(
+                f"Category: {result['category']}"
+            )
             print()
             print(result["text"])
 

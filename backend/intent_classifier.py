@@ -133,13 +133,12 @@ INTENT_KEYWORDS = {
     ],
 
     "ACCOUNT_ACCESS": [
-        "can't log in",
-        "cannot log in",
-        "can't login",
-        "cannot login",
-        "unable to log in",
-        "unable to login",
-        "account access",
+        "i cannot access my account",
+        "i can't access my account",
+        "cannot access my account",
+        "can't access my account",
+        "unable to access my account",
+        "i am unable to access my account",
     ],
 
     "UNAUTHORIZED_TRANSACTION": [
@@ -156,7 +155,7 @@ INTENT_KEYWORDS = {
         "don't recognize a transaction on my account",
         "do not recognize a transaction on my account",
         "i don't recognize a transaction on my account",
-        "i do not recognize a transaction on my account",
+    "i do not recognize a transaction on my account",
     ],
 
     "SUSPICIOUS_ACTIVITY": [

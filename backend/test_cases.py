@@ -33,49 +33,132 @@ class Intent(str, Enum):
     HUMAN_ESCALATION = "HUMAN_ESCALATION"
 
 
-class TestCase(NamedTuple):
+class Case(NamedTuple):
     category: str
     question: str
     expected: Intent
 
 
-TEST_CASES: tuple[TestCase, ...] = (
-    TestCase("Payment", "My payment failed", Intent.PAYMENT_FAILED),
-    TestCase("Payment", "My money was deducted but the payment failed", Intent.MONEY_DEDUCTED_FAILED),
-    TestCase("Payment", "My payment is still pending", Intent.PAYMENT_PENDING),
-    TestCase("Payment", "My payment was reversed", Intent.PAYMENT_REVERSED),
-    TestCase("Payment", "I was charged twice for the same payment", Intent.DUPLICATE_TRANSACTION),
-    TestCase("Payment", "The merchant did not receive my payment", Intent.PAYMENT_NOT_RECEIVED),
-    TestCase("Refunds", "My refund is pending", Intent.REFUND_PENDING),
-    TestCase("Refunds", "I have not received my refund", Intent.REFUND_NOT_RECEIVED),
-    TestCase("Refunds", "My refund failed", Intent.REFUND_FAILED),
-    TestCase("UPI", "What is my UPI transaction limit?", Intent.UPI_LIMIT),
-    TestCase("UPI", "I forgot my UPI PIN", Intent.UPI_PIN),
-    TestCase("KYC", "What is the status of my KYC?", Intent.KYC_STATUS),
-    TestCase("Account", "I cannot log in to my account", Intent.ACCOUNT_ACCESS),
-    TestCase("Security", "I don't recognize this transaction", Intent.UNAUTHORIZED_TRANSACTION),
-    TestCase("Security", "Someone is trying to access my account", Intent.SUSPICIOUS_ACTIVITY),
-    TestCase("Complaints", "What is the status of my complaint?", Intent.COMPLAINT_STATUS),
-    TestCase("Complaints", "I want to raise a complaint", Intent.CREATE_COMPLAINT),
-    TestCase("Human support", "I want to talk to a human agent", Intent.HUMAN_ESCALATION),
+TEST_CASES: tuple[Case, ...] = (
+    Case("Payment", "My payment failed", Intent.PAYMENT_FAILED),
+    Case(
+        "Payment",
+        "My money was deducted but the payment failed",
+        Intent.MONEY_DEDUCTED_FAILED,
+    ),
+    Case(
+        "Payment",
+        "My payment is still pending",
+        Intent.PAYMENT_PENDING,
+    ),
+    Case(
+        "Payment",
+        "My payment was reversed",
+        Intent.PAYMENT_REVERSED,
+    ),
+    Case(
+        "Payment",
+        "I was charged twice for the same payment",
+        Intent.DUPLICATE_TRANSACTION,
+    ),
+    Case(
+        "Payment",
+        "The merchant did not receive my payment",
+        Intent.PAYMENT_NOT_RECEIVED,
+    ),
+    Case(
+        "Refunds",
+        "My refund is pending",
+        Intent.REFUND_PENDING,
+    ),
+    Case(
+        "Refunds",
+        "I have not received my refund",
+        Intent.REFUND_NOT_RECEIVED,
+    ),
+    Case(
+        "Refunds",
+        "My refund failed",
+        Intent.REFUND_FAILED,
+    ),
+    Case(
+        "UPI",
+        "What is my UPI transaction limit?",
+        Intent.UPI_LIMIT,
+    ),
+    Case(
+        "UPI",
+        "I forgot my UPI PIN",
+        Intent.UPI_PIN,
+    ),
+    Case(
+        "KYC",
+        "What is the status of my KYC?",
+        Intent.KYC_STATUS,
+    ),
+    Case(
+        "Account",
+        "I cannot log in to my account",
+        Intent.ACCOUNT_ACCESS,
+    ),
+    Case(
+        "Security",
+        "I don't recognize this transaction",
+        Intent.UNAUTHORIZED_TRANSACTION,
+    ),
+    Case(
+        "Security",
+        "Someone is trying to access my account",
+        Intent.SUSPICIOUS_ACTIVITY,
+    ),
+    Case(
+        "Complaints",
+        "What is the status of my complaint?",
+        Intent.COMPLAINT_STATUS,
+    ),
+    Case(
+        "Complaints",
+        "I want to raise a complaint",
+        Intent.CREATE_COMPLAINT,
+    ),
+    Case(
+        "Human support",
+        "I want to talk to a human agent",
+        Intent.HUMAN_ESCALATION,
+    ),
 )
 
 
-def by_category(category: str) -> tuple[TestCase, ...]:
-    return tuple(tc for tc in TEST_CASES if tc.category.lower() == category.lower())
+def by_category(category: str) -> tuple[Case, ...]:
+    return tuple(
+        tc
+        for tc in TEST_CASES
+        if tc.category.lower() == category.lower()
+    )
 
 
 def evaluate(
     classify_fn: Callable[[str], str],
-    cases: Iterable[TestCase] = TEST_CASES,
+    cases: Iterable[Case] = TEST_CASES,
     verbose: bool = True,
-) -> list[TestCase]:
+) -> list[Case]:
     cases = list(cases)
-    failures: list[TestCase] = []
+    failures: list[Case] = []
+
     last_category = None
     use_color = verbose and sys.stdout.isatty()
-    green = (lambda s: f"\033[32m{s}\033[0m") if use_color else (lambda s: s)
-    red = (lambda s: f"\033[31m{s}\033[0m") if use_color else (lambda s: s)
+
+    green = (
+        lambda s: f"\033[32m{s}\033[0m"
+        if use_color
+        else s
+    )
+
+    red = (
+        lambda s: f"\033[31m{s}\033[0m"
+        if use_color
+        else s
+    )
 
     for tc in cases:
         actual = classify_fn(tc.question)
@@ -85,10 +168,17 @@ def evaluate(
             if tc.category != last_category:
                 print(f"\n{tc.category}")
                 last_category = tc.category
+
             status = green("PASS") if ok else red("FAIL")
-            line = f"  [{status}] {tc.question!r} -> {tc.expected.value}"
+
+            line = (
+                f"  [{status}] "
+                f"{tc.question!r} -> {tc.expected.value}"
+            )
+
             if not ok:
                 line += f"  (got {actual!r})"
+
             print(line)
 
         if not ok:
@@ -103,8 +193,22 @@ def evaluate(
 
 
 if __name__ == "__main__":
-    categories = sorted({tc.category for tc in TEST_CASES})
-    print(f"Loaded {len(TEST_CASES)} test cases across {len(categories)} categories:")
-    for c in categories:
-        print(f"  - {c} ({len(by_category(c))})")
-    print("\nImport TEST_CASES and call evaluate(your_classify_fn) to test a classifier.")
+    categories = sorted(
+        {tc.category for tc in TEST_CASES}
+    )
+
+    print(
+        f"Loaded {len(TEST_CASES)} test cases "
+        f"across {len(categories)} categories:"
+    )
+
+    for category in categories:
+        print(
+            f"  - {category} "
+            f"({len(by_category(category))})"
+        )
+
+    print(
+        "\nImport TEST_CASES and call "
+        "evaluate(your_classify_fn) to test a classifier."
+    )
