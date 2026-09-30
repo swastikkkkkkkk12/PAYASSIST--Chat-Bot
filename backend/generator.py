@@ -8,7 +8,8 @@ from ollama import chat
 MODEL = "llama3.2:3b"
 
 MAX_CONTEXT_CHUNKS = 3
-MAX_HISTORY_MESSAGES = 10 
+MAX_HISTORY_MESSAGES = 10
+
 
 # ---------------------------------------------------------
 # SYSTEM PROMPT
@@ -218,7 +219,64 @@ Content:
 """.strip()
         )
 
+    if not context:
+        return "NO RELEVANT KNOWLEDGE BASE INFORMATION WAS RETRIEVED."
+
     return "\n\n---\n\n".join(context)
+
+
+# ---------------------------------------------------------
+# SAFETY FILTER
+# ---------------------------------------------------------
+
+def sanitize_answer(answer):
+    """
+    Apply deterministic safety corrections to the generated answer.
+
+    The LLM must not claim that a human agent was contacted or that
+    an escalation was completed unless an actual system confirms it.
+    """
+
+    replacements = {
+        "human agent has been contacted":
+            "a human support agent can assist you",
+
+        "agent has been contacted":
+            "a human support agent can assist you",
+
+        "i have contacted a human":
+            "you can request assistance from a human support agent",
+
+        "i contacted a human agent":
+            "you can request assistance from a human support agent",
+
+        "your request has been transferred":
+            "you can request assistance from a human support agent",
+
+        "your request was transferred":
+            "you can request assistance from a human support agent",
+
+        "the request has been transferred":
+            "you can request assistance from a human support agent",
+
+        "the request was transferred":
+            "you can request assistance from a human support agent",
+    }
+
+    sanitized = answer
+
+    for forbidden, replacement in replacements.items():
+        sanitized = sanitized.replace(forbidden, replacement)
+        sanitized = sanitized.replace(
+            forbidden.capitalize(),
+            replacement,
+        )
+        sanitized = sanitized.replace(
+            forbidden.upper(),
+            replacement,
+        )
+
+    return sanitized.strip()
 
 
 # ---------------------------------------------------------
@@ -261,9 +319,12 @@ IMPORTANT:
   have enough information to answer accurately.
 - Never request sensitive payment information.
 - Do not claim that you performed an action.
+- Do not claim that a human agent was contacted or that a request was
+  transferred unless the knowledge base explicitly confirms that action.
 
 Return ONLY the final customer-facing answer.
 """
+
     response = chat(
         model=MODEL,
         messages=[
@@ -278,7 +339,10 @@ Return ONLY the final customer-facing answer.
         ],
     )
 
-    return response["message"]["content"].strip()
+    answer = response["message"]["content"].strip()
+
+    # Final deterministic safety layer.
+    return sanitize_answer(answer)
 
 
 # ---------------------------------------------------------
