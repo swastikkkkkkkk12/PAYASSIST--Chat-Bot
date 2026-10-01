@@ -132,6 +132,7 @@ WARN_STATUSES = {
 # --------------------------------------------------
 
 @app.get("/")
+@app.get("/health")
 def health_check():
     return {
         "status": "ok",
